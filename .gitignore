@@ -1,0 +1,27 @@
+# Original export contains account-specific references; publish the sanitized template instead.
+Ai job helper (1).json
+
+# Environment files (keep only the safe example)
+.env
+.env.*
+!.env.example
+
+# Local n8n data and database files
+.n8n/
+*.sqlite
+*.sqlite3
+*.db
+
+# Runtime output and dependencies
+node_modules/
+dist/
+build/
+coverage/
+*.log
+
+# Common local credentials and key material
+credentials*.json
+service-account*.json
+*.pem
+*.key
+*.p12

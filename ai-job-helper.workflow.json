@@ -1,0 +1,558 @@
+{
+  "name": "Ai job helper",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Al Job Assistant & Resume Optimizer",
+        "formDescription": "Submit your resume and job details to automatically analyze job fit, improve your resume, generate a cover letter, and track\nyour application progress using automation.\n",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "placeholder": "Enter your full name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Enter your email",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Job Link",
+              "placeholder": "Paste Linkedin / Company Job URL",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload Resume",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf , .docx",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Experience Level",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Student / Fresher"
+                  },
+                  {
+                    "option": "0-2 Years"
+                  },
+                  {
+                    "option": "2-5 Years"
+                  },
+                  {
+                    "option": "5+ Years"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -816,
+        -208
+      ],
+      "id": "acdff00a-2d66-46d5-adb3-78024c309752",
+      "name": "On form submission"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json[\"Job Link\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -592,
+        -48
+      ],
+      "id": "4c1a0c9f-650a-441d-9c7d-00f3bcdb64e9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $json.data || \"\";\n\n// Remove tags first\nconst text = html.replace(/<[^>]*>/g, \"\").replace(/\\+/g, \"\");\n\n// Extract main job description\nconst match = text.match(/Job Summary: (.*?) Similar jobs/);\n\nconst cleaned = match\n  ? match[1].trim().substring(0, 8000)\n  : text.substring(0, 8000);\n\nreturn [\n  {\n    cleaned_html: cleaned\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -48
+      ],
+      "id": "39c59e38-5194-4377-b4ea-28843fb024de",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "Upload_Resume",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -80,
+        -352
+      ],
+      "id": "cedf6441-4286-42aa-9bbb-2c2cd2f0f470",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -144,
+        176
+      ],
+      "id": "28e933e8-0c80-4e86-b335-b45e4dc7b367",
+      "name": "Google Gemini Chat Model"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "={\n  \"job_title\": \"Frontend Engineer\",\n  \"required_skills\": [\"HTML\", \"CSS\", \"React\"],\n  \"company_name\": \"DFC First Bank\",\n  \"responsibilities\": [\n    \"Engage the development team to identify technical roadblocks and recommend solutions\",\n    \"Help shape the technology stack and architecture of new features and applications\",\n    \"Identify, analyze and develop interfaces and integration flows\",\n    \"Develop software models, review code, gather requirements, fix bugs, test and document implementations\",\n    \"Develop and design test cases for software\",\n    \"Explain complex technical issues to stakeholders and recommend solutions\",\n    \"Design system specifications, standards and problem solving\",\n    \"Troubleshoot issues and provide fixes\",\n    \"Provide status updates and reporting metrics to leadership\",\n    \"Monitor junior developers and support skill development\",\n    \"Ensure efficient and effective delivery of business requirements\"\n  ],\n  \"location\": \"Chennai, India\",\n  \"experience_required\": {\n    \"type\": [\"string\",\"null\"]\n  }\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -16,
+        176
+      ],
+      "id": "96b731c6-b38c-4bc3-9838-b50c10784c02",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineAll",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        208,
+        -208
+      ],
+      "id": "1039b0ba-06a1-4c71-977f-265a408c8113",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        32
+      ],
+      "id": "af251ff0-1e24-411a-bd92-f90fb59eee6b",
+      "name": "Google Gemini Chat Model1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"skill_gaps\": [\n    \"string\"\n  ],\n  \"resume_improvements\": [\n    \"string\"\n  ],\n  \"match_score\": \"string\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        704,
+        32
+      ],
+      "id": "76d6eaf2-dc65-4678-b611-9306cee7d6a3",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        976,
+        32
+      ],
+      "id": "3d3f152e-c38e-4d02-a4ef-adcc8e419259",
+      "name": "Google Gemini Chat Model2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an ATS resume optimizer.\n\nCompare the job requirements with the candidate's resume and provide structured\noptimization.\n\nJob Description:\nRequired Skills : {{ $json.output.required_skills }}\n\nResponsibilities : {{ $json.output.responsibilities }}\n\nExperience Required : {{ $json.output.experience_required }}\n\nCandidate Resume:\n{{ $json.text }}\n\nReturn ONLY valid JSON in this exact format:\n{\n  \"skill_gaps\": [\"skill1\", \"skill2\"],\n  \"resume_improvements\": [\"improvement1\", \"improvement2\"],\n  \"optimized_resume\": \"full optimized resume text here\",\n  \"match_score\": 85\n}\n\nDo NOT add any markdown formatting or extra text.\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        496,
+        -208
+      ],
+      "id": "878d21fc-3e9a-43a4-8e99-4734e2f62cbb",
+      "name": "Resume Analysis"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a professional cover letter in plain text format (no JSON).\n\nCandidate Name:{{ $('On form submission').item.json['Full Name'] }}\nEmail:{{ $('On form submission').item.json.Email }}\nJob Role:{{ $('JD Analyzer').item.json.output.job_title }}\nTarget Company:{{ $('JD Analyzer').item.json.output.company_name }}\nJob Description:{{ $('JD Analyzer').item.json.output }}\n\nResume Analysis:{{ $json.output }}\n\nWrite a compelling, personalized cover letter that:\n1. Highlights relevant skills from the resume\n2. Addresses the specific job requirements\n3. Shows enthusiasm for the role\n4. Is concise (300-400 words)\n5. Uses professional tone\n\nReturn ONLY the cover letter text, no JSON wrapper. ",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        -208
+      ],
+      "id": "23834282-9fa0-4155-be7a-c2f2228da39c",
+      "name": "Cover Letter"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a job description parser.\n\nExtract structured information from the job posting HTML and return ONLY valid JSON.\n\nFields to extract:\n- job_title (string or null)\n- company_name (string or null)\n- required_skills (array of strings)\n- responsibilities (array of strings)\n- experience_required (string or null)\n- location (string or null)\n\nRules:\n1. Return ONLY JSON. No explanations, no markdown, no extra text.\n2. If a value is not clearly found, return null.\n3. required_skills and responsibilities must always be arrays (empty array if nothing found).\n4. Keep values short and clean. Do not copy large paragraphs.\n5. Extract only meaningful skills, not generic words like \"team player\" or \"communication\".\n\nExample output:\n\n{\n  \"job_title\": \"Frontend Developer\",\n  \"company_name\": \"PayPal\",\n  \"required_skills\": [\"JavaScript\", \"React\", \"HTML\", \"CSS\"],\n  \"responsibilities\": [\n    \"Build user interfaces\",\n    \"Collaborate with backend teams\",\n    \"Optimize performance\"\n  ],\n  \"experience_required\": \"2+ years\",\n  \"location\": \"Chennai, India\"\n}\n\nJob HTML:\n{{ $json.cleaned_html }}\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -144,
+        -48
+      ],
+      "id": "9eaf9f89-fa91-473b-bb8b-8db1b09eca9b",
+      "name": "JD Analyzer"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('On form submission').item.json['Full Name'] }}",
+            "Email": "={{ $('On form submission').item.json.Email }}",
+            "Company": "={{ $('JD Analyzer').item.json.output.company_name }}",
+            "Job Title": "={{ $('JD Analyzer').item.json.output.job_title }}",
+            "Skils gap": "={{ $('Resume Analysis').item.json.output }}",
+            "Resume Improvement": "={{ $('Resume Analysis').item.json.output.resume_improvements }}",
+            "Cover letter": "={{ $json.output }}",
+            "Match Score": "={{ $('Resume Analysis').item.json.output.match_score }}",
+            "Date": "={{ $now.toFormat('yyyy-MM-dd') }}\n"
+          },
+          "matchingColumns": [
+            "Match Score"
+          ],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Match Score",
+              "displayName": "Match Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Skils gap",
+              "displayName": "Skils gap",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resume Improvement",
+              "displayName": "Resume Improvement",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cover letter",
+              "displayName": "Cover letter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        -208
+      ],
+      "id": "1c5191a3-ef14-4f6a-9b98-d426f5dd8583",
+      "name": "Append or update row in sheet"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('On form submission').item.json.Email }}",
+        "subject": "=Your AI Job Match Report - {{ $('JD Analyzer').item.json.output.job_title || 'Job Application' }}",
+        "message": "=<div style=\"font-family: Arial, Helvetica, sans-serif; max-width: 700px; margin: auto; line-height: 1.6; color: #222;\">\n\n  <h2 style=\"margin-bottom: 5px;\">\n    AI Job Match Report\n  </h2>\n\n  <p style=\"color: #555; margin-top: 0;\">\n    Hi {{ $('On form submission').item.json['Full Name'] }},\n  </p>\n\n  <hr style=\"border:none;border-top:1px solid #eee;margin:20px 0;\">\n\n  <h3>Job Details</h3>\n\n  <p>\n    <strong>Job Title:</strong>\n    {{ $('JD Analyzer').item.json.output.job_title }}\n  </p>\n\n  <p>\n    <strong>Company:</strong>\n    {{ $('JD Analyzer').item.json.output.company_name }}\n  </p>\n\n  <p>\n    <strong>Location:</strong>\n    {{ $('JD Analyzer').item.json.output.location }}\n  </p>\n\n  <p>\n    <strong>Experience Required:</strong>\n    {{ $('JD Analyzer').item.json.output.experience_required }}\n  </p>\n\n  <p>\n    <strong>Match Score:</strong>\n    <span style=\"font-size:18px;font-weight:bold;color:#2c7be5;\">\n      {{ $json['Match Score'] }}\n    </span>\n  </p>\n\n  <hr style=\"border:none;border-top:1px solid #eee;margin:20px 0;\">\n\n  <h3>Skill Gaps</h3>\n\n  <ul>\n    {{\n      $('Resume Analysis').item.json.output.skill_gaps\n        .map(skill => '<li>' + skill + '</li>')\n        .join('')\n    }}\n  </ul>\n\n  <h3>Resume Improvements</h3>\n\n  <ul>\n    {{\n      $('Resume Analysis').item.json.output.resume_improvements\n        .map(item => '<li>' + item + '</li>')\n        .join('')\n    }}\n  </ul>\n\n  <hr style=\"border:none;border-top:1px solid #eee;margin:20px 0;\">\n\n  <h3>Generated Cover Letter</h3>\n\n  <div style=\"background:#f8f9fb;padding:15px;border-radius:8px;white-space:pre-line;\">\n    {{\n      $('Cover Letter').item.json.output\n        .replace('[Date]', $now.format('MMMM dd, yyyy'))\n    }}\n  </div>\n\n  <hr style=\"border:none;border-top:1px solid #eee;margin:25px 0;\">\n\n  <p style=\"font-size:13px;color:#666;\">\n    This report was generated automatically by your AI Job Assistant.\n  </p>\n\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        -208
+      ],
+      "id": "ace40cad-e2df-46be-8709-b68e759f79a5",
+      "name": "Send a message"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "JD Analyzer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Resume Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Resume Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Resume Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Cover Letter",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume Analysis": {
+      "main": [
+        [
+          {
+            "node": "Cover Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JD Analyzer": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Cover Letter": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
